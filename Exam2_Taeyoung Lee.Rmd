@@ -1,0 +1,328 @@
+---
+title: "Exam2_Taeyoung Lee"
+author: "Taeyoung Lee"
+date: "6/26/2020"
+output: pdf_document
+toc: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Questions
+
+1. Please clear the environment in R.
+
+```{r}
+# clear the environment
+rm(list=ls())
+
+```
+
+
+2. Load the “inequality” dataset into R, and save the data frame as ‘inequality_data’.
+
+```{r}
+# Load the dataset and save data frame
+library(rio)
+inequality_data = import("inequality.xlsx", which = 1)
+```
+
+
+3. Is this dataset a cross-sectional or panel dataset? Explain why in words and provide
+some R code to prove that your answer is correct.
+
+This data set is a cross-section dataset because it only has 2015 data.
+
+```{r}
+# See summary of year
+summary(inequality_data$year)
+```
+
+
+4.The data frame contains a variable called inequality_gini. It corresponds to the
+inequality Gini index, which “measures the extent to which the distribution of income
+(or, in some cases, consumption expenditure) among individuals or households within
+an economy deviates from a perfectly equal distribution.” In simple terms, there is a
+lot of inequality when there are a lot of rich people and a lot of poor people but not a
+lot of middle-class people. There is low inequality when most people are earning about
+the same amount of income. Scandinavian countries like Sweden and Denmark tend
+to have the most optimal Gini index scores. Using the subset command, provide the
+inequality_gini scores for Denmark and Sweden.
+
+```{r}
+# Check the inequality score for Demark
+subset(inequality_data, country=="Denmark")
+```
+
+```{r}
+# Check the inequality score for Sweden
+subset(inequality_data, country=="Sweden")
+```
+
+
+5. Since Brazil started the Bolsa Familia conditional cash transfer program in 1990s,
+inequality in Brazil has decreased significantly. Just the same, inequality in Brazil is very
+high comparatively. Using the subset command, please show the inequality_gini
+score for Brazil.
+
+```{r}
+# Check the inequality score for Brazil
+subset(inequality_data, country=="Brazil")
+```
+
+
+6. Given your answers to the previous questions, is it better to have a high or low
+inequality_gini scores?
+
+It is better to have a low inequality_gini score because Scandinavian countries like Sweden and Denmark that have low inequality show lower scores than Brazil.
+
+
+7. Use the head command to get a quick peak at the data frame.
+
+```{r}
+# Take a quick peak
+head(inequality_data)
+```
+
+
+8. Write a function called “accent.remove” to remove the accent on Belarus, apply that
+function, and run the head command again to show that you removed the accent.
+
+```{r}
+# Remove accent for Belarus
+accent.remove <- function(s)  {
+  old1 <- "ú"
+  new1 <- "u"
+  s1 <- chartr(old1, new1, s)
+}
+
+# finish the accent FIX
+inequality_data$country = accent.remove(inequality_data$country)
+
+# Take a quick peak at the data
+head(inequality_data)
+```
+
+
+9. Sort the data by the countries with the lowest inequality_gini scores and then run
+the head command again to show what the top 5 countries are.
+
+```{r}
+# Sort the data 
+inequality_data = inequality_data[order(inequality_data$inequality_gini),]
+
+# Check the top 5 countries
+head(inequality_data, n =5)
+```
+
+
+10. What is the mean inequality_gini score? Provide the relevant R code.
+
+```{r}
+# Check the mean
+mean(inequality_data$inequality_gini, na.rm = TRUE)
+```
+
+
+11. Using the ifelse command, create two new dummy variables, high_inequality
+and low_inequality, which takes values of either zero or one. The low_inequality
+variable should correspond to countries with inequality_gini scores below the mean.
+The high_inequality variable should correspond to countries with inequality_gini
+scores above the mean. (Note: we will not accept answers that do not use the ifelse
+command to create the variables.)
+
+```{r}
+# Creating dummy variables-- using ifelse
+inequality_data$low_inequality = ifelse(inequality_data$inequality_gini < 36.81, yes = 1, no = 0 )
+inequality_data$high_inequality = ifelse(inequality_data$inequality_gini > 36.81, yes = 1, no = 0 )
+
+# Take a quick peak
+head(inequality_data)
+```
+
+
+12. Run a cross-tab using the high_inequality and low_inequality variables that you created
+in the previous question. The cross-tab should provide the mean inequality_gini
+score and number of observations for each category of inequality. (Note: if you had
+trouble using the ifelse command, we couldn’t provide points for the previous question.
+However, you can create the variables using the indexing method)
+
+```{r}
+# Running a cross-tab
+library(doBy)
+summaryBy(high_inequality ~ low_inequality, data=inequality_data, FUN=c(mean,length))
+
+```
+
+
+13. The World Bank, the African Development Bank, and the Bill and Melinda Gates
+Foundation are all working on reducing inequality in Africa. Write a for loop that
+prints the names of these three actors. (Note: we will not accept answers that do not
+provide a for loop.)
+
+```{r}
+# Create an organization vector
+orgs <- c('World Bank', 'the African Development Bank', 'the Bill and Melinda Gates Foundation')
+
+#create the for loop
+for (i in orgs){
+print (i)
+}
+
+```
+
+
+14. Use this website to find a variable from the World Development Indicators that you
+think is correlated with inequality. Tell us what variable you picked and why you picked
+it. (Don’t worry if your prediction is not correct. We just want you to provide some
+rationale.)
+
+I think the variable "Income share held by highest 20%" will be highly correlated with inequality 
+because the more income share the highest 20% hold, the higher inequlity score would be. 
+
+
+15. Import that variable directly into R. (Note: if you are having trouble, read Mike Denly’s
+Canvas announcement from the other day.)
+
+```{r}
+# add some data from the World Development Indicators (WDI)
+remotes::install_github('vincentarelbundock/WDI')
+
+# WDI package?
+library(WDI)
+
+head(WDI)
+
+# Import the variable
+
+income_data = WDI(country = "all",
+    indicator = c("SI.DST.05TH.20"), # indicator from web
+    start = 2015, end = 2015, extra = FALSE, cache = NULL)
+
+```
+
+
+16. Rename the variable that you imported into something that we can actually understand.
+
+```{r}
+# Rename variables
+library(data.table)
+setnames(income_data,"SI.DST.05TH.20", "income_share")
+
+# Take a quick peak
+head(income_data)
+```
+
+
+17. Merge the new variable into the other dataset, using inequality_data as the x and
+and your new data frame as the y. When merging use the command that only keeps
+the rows in your x data frame. Call your new data frame merged_df. Ensure that you
+have no variables with .x or .y at the end of them in your new merged_df, while at
+the same time ensuring there are still variables like country and year.
+
+```{r}
+# Merging data with a left-join
+library(tidyverse)
+merged_df = left_join(x=inequality_data,
+                        y=income_data,
+                        by =c("country", "year"))
+
+# Check the variable names of new data frame
+names(merged_df)
+
+# Check if the country for iso2c.x and iso2c.y are matched
+library(tidyverse)
+
+merged_df<-
+  merged_df %>%
+  mutate(iso2c_match = ifelse(iso2c.x == iso2c.y,
+                                  "yes",
+                                  "no"))
+
+# drop iso2c.x and rename iso2c.y
+merged_df <-
+  merged_df %>%
+  select(-c("iso2c.x")) %>% 
+  rename("iso2c" = "iso2c.y")
+```
+
+
+18. In merged_df, remove the missing data on the basis of inequality_gini and your
+new variable that you took from the World Development Indicators.
+
+```{r}
+# Remove missing values
+na.omit(merged_df, select=c("inequality_gini", "income_share"))
+
+```
+
+
+19. Using the filter command and piping method, only keep the data with
+inequality_gini scores greater than 30. Save the new data frame as data_greater_30.
+(Note: we will not accept answers using subset.)
+
+```{r}
+# Filter out thevariables
+library(tidyverse) 
+data_greater_30 <-
+  merged_df %>%  # pipe(%>%): 
+  dplyr::filter(!(inequality_gini <= 30))
+```
+
+
+20. Using data_greater_30, use to R to count how many countries have the sequence “ai”
+in their name.
+
+```{r}
+grep("ai", data_greater_30)
+
+```
+
+
+21. Use any command from the apply family to take the sum of inequality_gini in
+data_greater_30.
+
+ 
+```{r}
+sapply(data_greater_30$inequality_gini,sum)
+
+```
+ 
+
+22. Label your variables in merged_df. Any labels will suffice.
+
+```{r}
+#label the data
+library(labelled)
+
+# Drop countries match
+merged_df$iso2c_match = NULL
+ 
+
+var_label(merged_df) <- list(`country` = "Country",
+                               `year` = "Year",
+                               `inequality_gini` = "Inequality Gini Score",
+                               `low_inequality` = "Inequality Gini Score < 36.81",
+                               `high_inequality` = "Inequality Gini Score > 36.81",
+                               `iso2c`= "ISO-2 Country Code")
+                               
+```
+
+23. Save the labeled data frame as a Stata dataset called final_data.
+
+```{r}
+# Save the data frame as a Stata dataset
+library(rio)
+export(merged_df, "cleaned_dataset.dta")
+```
+
+
+24. Save all of the files (i.e. .Rmd, .dta, .xlsx, .pdf/Word Doc), push them to your
+GitHub repo, and provide us with the link to that repo.
+
+Git hup repo: https://github.com/taeyoung-lee/exam2
+
+
+
